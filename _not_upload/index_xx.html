@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Knob with Angle Reference in WebXR</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #angles { position: absolute; top: 10px; left: 10px; color: white; }
+    </style>
+</head>
+<body>
+    <div id="angles">
+        <div id="angleX">X: 0°</div>
+        <div id="angleY">Y: 0°</div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@r128/examples/jsm/webxr/VRButton.js"></script>
+    <script>
+        let websocket = new WebSocket("ws://localhost:5678");
+        let scene, camera, renderer, knob, pointer;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.xr.enabled = true; // Enable WebXR
+            document.body.appendChild(renderer.domElement);
+
+            document.body.appendChild(VRButton.createButton(renderer)); // Create VR button
+
+            // Knob setup
+            const knobGeometry = new THREE.CylinderGeometry(1, 1, 1, 32);
+            const knobMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+            knob = new THREE.Mesh(knobGeometry, knobMaterial);
+            scene.add(knob);
+
+            // Pointer setup
+            const pointerGeometry = new THREE.BoxGeometry(0.1, 0.1, 1);
+            const pointerMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+            pointer = new THREE.Mesh(pointerGeometry, pointerMaterial);
+            pointer.position.x = 1;
+            knob.add(pointer);
+
+            // Lighting
+            const light = new THREE.PointLight(0xffffff, 1, 100);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+
+            camera.position.z = 5;
+
+            renderer.setAnimationLoop(animate);
+        }
+
+        function animate() {
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>

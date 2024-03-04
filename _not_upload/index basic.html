@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Send Angle to WebSocket</title>
+</head>
+<body>
+    <h1>Send Angle to WebSocket Server</h1>
+    <input type="text" id="angleInput" placeholder="Enter angle">
+    <button onclick="sendAngle()">Send</button>
+
+    <script>
+        //const uri = "ws://10.10.1.202:5678";
+        const uri = "ws://localhost:5678";
+
+        let websocket = new WebSocket(uri);
+
+        websocket.onopen = () => {
+            console.log("Connected to the WebSocket server");
+        };
+
+        websocket.onmessage = (event) => {
+            console.log(`Received: ${event.data}`);
+        };
+
+        websocket.onerror = (event) => {
+            console.error("WebSocket error:", event);
+        };
+
+        websocket.onclose = (event) => {
+            console.log('WebSocket connection closed:', event);
+        };
+
+        function sendAngle() {
+            const angle = document.getElementById('angleInput').value;
+            if (angle === '') {
+                alert('Please enter an angle');
+                return;
+            }
+            console.log(`Sending: ${angle}`);
+            websocket.send(angle);
+        }
+    </script>
+</body>
+</html>

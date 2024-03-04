@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Knob Input with Three.js</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #angles { position: absolute; top: 10px; left: 10px; color: white; }
+    </style>
+</head>
+<body>
+    <div id="angles">
+        <div id="angleX">X: 0°</div>
+        <div id="angleY">Y: 0°</div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let websocket = new WebSocket("ws://10.10.1.202:5678");
+        let scene, camera, renderer, knob;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Create a cylinder to serve as the knob
+            const geometry = new THREE.CylinderGeometry(1, 1, 2, 32);
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            knob = new THREE.Mesh(geometry, material);
+            scene.add(knob);
+
+            camera.position.z = 5;
+
+            document.addEventListener('mousemove', onDocumentMouseMove, false);
+            animate();
+        }
+
+        let lastEmitTime = Date.now();
+        const emitInterval = 100; // milliseconds
+
+        function onDocumentMouseMove(event) {
+            const currentTime = Date.now();
+            if (currentTime - lastEmitTime > emitInterval) {
+                knob.rotation.x = event.clientY / 200;
+                knob.rotation.y = event.clientX / 200;
+
+                // Update the angle display
+                document.getElementById('angleX').textContent = `X: ${(knob.rotation.x * (180 / Math.PI)).toFixed(2)}°`;
+                document.getElementById('angleY').textContent = `Y: ${(knob.rotation.y * (180 / Math.PI)).toFixed(2)}°`;
+
+                // Send the rotation angles to the WebSocket server
+                const angles = { x: knob.rotation.x, y: knob.rotation.y };
+                websocket.send(JSON.stringify(angles));
+
+                lastEmitTime = currentTime;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        websocket.onopen = function(event) {
+            console.log("Connected to the WebSocket server");
+        };
+
+        websocket.onmessage = function(event) {
+            console.log(`Received: ${event.data}`);
+        };
+
+        websocket.onerror = function(event) {
+            console.error("WebSocket error:", event);
+        };
+
+        websocket.onclose = function(event) {
+            console.log('WebSocket connection closed:', event);
+        };
+
+        init();
+    </script>
+</body>
+</html>
